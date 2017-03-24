@@ -1,0 +1,1 @@
+cat en_US.*.txt | tr "[A-Z]" "[a-z]" | tr "[:punct:]" " " |  tr -d '[:digit:]' | tr " " "\n" | egrep -v "[^ -~]"  | sort | uniq > corpus_words.txt

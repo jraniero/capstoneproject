@@ -1,0 +1,10 @@
+name: TextPredictor
+title: TextPredictor
+account: jraniero
+server: shinyapps.io
+appId: 164873
+bundleId: 752687
+url: https://jraniero.shinyapps.io/TextPredictor/
+when: 1489866503.15855
+asMultiple: FALSE
+asStatic: FALSE
