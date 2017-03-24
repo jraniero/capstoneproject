@@ -1,0 +1,31 @@
+---
+title: "Text prediction algorithm analysis"
+author: "Jose Gonzalez"
+date: "24 maart 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+results<-readRDS("target_vs_predicted.rds")
+ngram<-readRDS(file.path("TextPrediction","ngrams_app.rds"))
+results$number<-1
+agg_results<-aggregate(number~target+predicted,data=results,FUN=sum)
+agg_results<-agg_results[order(-agg_results$number,agg_results$target,agg_results$predicted),]
+matches<-subset(agg_results,as.character(target)==as.character(predicted))
+mismatches<-subset(agg_results,as.character(target)!=as.character(predicted))
+```
+
+There are `r sum(matches$number)` exact predictions and `r sum(mismatches$number)` not exact predictions. This yield an exact prediction rate of `r (sum(matches$number)/(sum(matches$number)+sum(mismatches$number)))*100`%
+
+Number of unique words in the ngram `r length(unique(ngram$last_word))`
+
+Here are the more frequent mismatches
+```{r}
+head(mismatches,20)
+```
+
+

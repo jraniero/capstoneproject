@@ -1,0 +1,133 @@
+---
+title: "Capstone Project - Milestone Report - Exploratory Data Analysis"
+author: "Jose Gonzalez"
+date: "19 February 2017"
+output: html_document
+---
+#Introduction
+This report illustrates some basic exploratory data analysis performed on the blog, twitter and news files provided for the Capstone project.
+Some heavylifting is performed using UNIX commands, in particular the line count, word count and file sampling.
+The data analysis itself is performed using the tm R package
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(tm)
+datapath<-file.path(".","final","en_US")
+skipLines<-20
+```
+
+## Summary of the files
+We will count the number of lines and words on each file. For that purpose, the UNIX wc command is very convenient. We will invoke this command from R as shown in the following code snippet.
+
+```{r file_summary, cache=TRUE}
+files<-list.files(path=datapath,pattern="*.txt")
+#For each file we use UX commands to count lines, words
+for(file in files){
+  command<-paste("wc -l ",datapath,"/",file,sep="")
+  print(paste("Number of lines in ",file,": ",command))
+  print(system(command,intern=TRUE))
+  command<-paste("wc -w ",datapath,"/",file,sep="")
+  print(paste("Number of words in ",file,": ",command))
+  print(system(command,intern=TRUE))
+}
+```
+
+## Subsetting
+We will now get only a sample of each of the files, by keeping only a line out of `r skipLines` (`r 100/skipLines`%). This is done using the UNIX awk command, as shown here below. New files are created with the sampled lines from the original files.
+
+```{r subsetting, echo=FALSE, cache=FALSE}
+
+#Given the size of the files we will use UX commands to create a subsample of the file
+#by keeping only a line out of n
+for(file in files){
+  command<-paste("awk 'NR == 1 || NR % ",skipLines," == 0' ",datapath,"/",file," >",datapath,"/sampled/",file,sep="")
+  print(command)
+  system(command)
+}
+
+```
+
+
+##Data loading and cleaning
+We will load the files with the subsampled lines and use tm to perform some basic cleaning of the data.
+```{r load_and_clean, cache=TRUE}
+datapath<-file.path(".","final","en_US","sampled")
+
+removeURL <- function(x) gsub("http:[[:alnum:]]*", "", x)
+removeHashTags <- function(x) gsub("#\\S+", "", x)
+removeTwitterHandles <- function(x) gsub("@\\S+", "", x)
+
+#file="en_US.blogs.txt"
+myText<-Corpus(DirSource(datapath,pattern="*"))
+
+
+myText <- tm_map(myText, removeNumbers)
+myText <- tm_map(myText, removePunctuation)
+myText <- tm_map(myText , stripWhitespace)
+myText <- tm_map(myText, content_transformer(tolower))
+
+myText<-tm_map(myText,content_transformer(removeURL))
+myText<-tm_map(myText,content_transformer(removeHashTags))
+myText<-tm_map(myText,content_transformer(removeTwitterHandles))
+
+myText <- tm_map(myText, removeWords, stopwords("english")) 
+```
+
+
+##Word frequency
+The following figure shows the word frequency in each of the subsampled files.
+```{r word_freq, cache=TRUE}
+par(mfrow=c(1,3))
+for(i in c(1:3)){
+  myTextDtm<-DocumentTermMatrix(myText[i])
+  freq<-data.frame(word=myTextDtm$dimnames$Terms,frequency=myTextDtm$v)
+  freq<-freq[order(-freq$frequency),]
+  top<-freq[1:25,]
+  top$word<-factor(top$word,levels=top$word) #Re-factor to remoe emtpy levels and keep order in x-axis
+  #plot(frequency~word,data=top)
+  barplot(top$frequency,names=top$word,horiz=TRUE,main=names(myText)[i],las=1)
+}
+```
+
+##2-gram
+The following figure shows the 2-gram frequency in each of the subsampled files. 
+```{r 2gram, cache=TRUE}
+par(mfrow=c(1,3))
+for(i in c(1:3)){
+  myTextDtm<-DocumentTermMatrix(myText[i],
+                                control=list(tokenizer=function(x){
+                                  unlist(lapply(ngrams(words(x), 2), paste, collapse = " "), use.names = FALSE)
+                                }))
+  freq<-data.frame(word=myTextDtm$dimnames$Terms,frequency=myTextDtm$v)
+  freq<-freq[order(-freq$frequency),]
+  top<-freq[1:25,]
+  top$word<-factor(top$word,levels=top$word) #Re-factor to remoe emtpy levels and keep order in x-axis
+  #plot(frequency~word,data=top)
+  barplot(top$frequency,horiz=TRUE,main=names(myText)[i],las=1,space=0)
+  text(rep(top$frequency[1]/2,25),c(0:24)+0.6,labels=top$word)
+}
+```
+
+##3-gram
+The following figure shows the 3-gram frequency in each of the subsampled files. 
+```{r 3gram, cache=TRUE}
+par(mfrow=c(1,3))
+for(i in c(1:3)){
+  myTextDtm<-DocumentTermMatrix(myText[i],
+                                control=list(tokenizer=function(x){
+                                  unlist(lapply(ngrams(words(x), 3), paste, collapse = " "), use.names = FALSE)
+                                }))
+  freq<-data.frame(word=myTextDtm$dimnames$Terms,frequency=myTextDtm$v)
+  freq<-freq[order(-freq$frequency),]
+  top<-freq[1:25,]
+  top$word<-factor(top$word,levels=top$word) #Re-factor to remoe emtpy levels and keep order in x-axis
+  #plot(frequency~word,data=top)
+  barplot(top$frequency,horiz=TRUE,main=names(myText)[i],las=1,space=0)
+  text(rep(top$frequency[1]/2,25),c(0:24)+0.6,labels=top$word)
+}
+```
+
+##Conclusion
+We notice that the word, 2-gram and 3-gram frequency differ in each of the files. This might be interesting in the case we need to create a model depending on the context (twitter, blogs or news)
+It also appears that some words appear quite often although they might not add a lot of information (much, little) and it might be necessary to add those to the stop word list.
