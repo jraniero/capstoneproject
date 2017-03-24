@@ -1,0 +1,54 @@
+---
+title: "Text Prediction App Presentation"
+author: "Jose Gonzalez"
+date: "24 March 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(shiny)
+```
+
+## Introduction
+- Purpose: predict  most likely next word in a phrase or sequence
+- Available on https://jraniero.shinyapps.io/TextPredictor/
+- Code (app and preprocessing) on https://github.com/jraniero/capstoneproject 
+- Algorithm based on Good - Turing Frequency Estimation
+- Algorithm favours matches of longer n-grams
+
+## Using the app
+
+- Input a few words or a phrase under the "phrase" field
+- Click on "Predict"
+- The App will then show a histogram and wordcloud of the most likely word to follow
+```{r, echo = FALSE}
+knitr::include_graphics("screenshot.png",dpi=300)
+```
+
+## Algorithm description
+- Usage of prestored n-gram dictionnary of up to 5 words, with their frequency
+- First preprocess user input (to lowercase, remove stopwords, numbers...)
+- Looks for matches in the n-gram dictionnary, each match is scored
+- Score is calculated as: frequency times the length of n-gram
+- Higher score to longer n-grams
+- Return the last words of each of the n-grams with highest score
+- Fast: provides results in a few seconds
+
+## Algorithm accuracy tests
+- The algorithm was tested against a test set of 4000 phrases
+```{r include=FALSE}
+results<-readRDS("target_vs_predicted.rds")
+ngrams<-readRDS(file.path("TextPredictor","ngrams_app.rds"))
+results$number<-1
+agg_results<-aggregate(number~target+predicted,data=results,FUN=sum)
+agg_results<-agg_results[order(-agg_results$number,agg_results$target,agg_results$predicted),]
+matches<-subset(agg_results,as.character(target)==as.character(predicted))
+mismatches<-subset(agg_results,as.character(target)!=as.character(predicted))
+```
+- Exact matches `r sum(matches$number)`, mismatches`r sum(mismatches$number)` not exact predictions. 
+- Exact prediction rate of `r sprintf("%.02f",100*sum(matches$number)/(sum(matches$number)+sum(mismatches$number)))`% (note rate does not account for synonym match)
+- Given that there are `r length(unique(ngrams$last_word))` unique words in dictionnary,  probability of randomly picking right word is `r sprintf("%.03f",100/length(unique(ngrams$last_word)))`%
+- Algorithm outperforms random selection, even without considering synonym matches
+- Test code:
+https://github.com/jraniero/capstoneproject/blob/master/test_perf.R 

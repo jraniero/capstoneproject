@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 results<-readRDS("target_vs_predicted.rds")
-ngram<-readRDS(file.path("TextPrediction","ngrams_app.rds"))
+ngram<-readRDS(file.path("TextPredictor","ngrams_app.rds"))
 results$number<-1
 agg_results<-aggregate(number~target+predicted,data=results,FUN=sum)
 agg_results<-agg_results[order(-agg_results$number,agg_results$target,agg_results$predicted),]
