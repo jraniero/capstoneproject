@@ -1,14 +1,14 @@
 
 # Capstoneproject
 
-##Purpose
+## Purpose
 This repository holds the files of the Coursera Data Science Specialization CapStone project.
 
-##Shiny App
+## Shiny App
 Under TextPredictor you will find the files for the Shiny App
 The Shiny app is available here: https://jraniero.shinyapps.io/TextPredictor/
 
-##Preprocessing scripts
+## Preprocessing scripts
 In the main directory you will find
 - The Report.Rmd file that shows the exploratory data analysis and how the training data was obtained from the .txt project files
 - The W3StoreNGrams.R script, that was used to create the n-gram dictionnary used by the shiny app
@@ -17,7 +17,7 @@ In the main directory you will find
 - The Analysis_Performance_Results.Rmd, that reports on the performance of the algorithm
 - Different unix scripts used for exploratory analysis, sampling and cleanup
 
-##Environment
+## Environment
 R version 3.3.2 (2016-10-31)
 Platform: x86_64-apple-darwin13.4.0 (64-bit)
 Running under: OS X El Capitan 10.11.4
